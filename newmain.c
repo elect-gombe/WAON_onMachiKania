@@ -1,4 +1,3 @@
-
 #define _SUPPRESS_PLIB_WARNING
 #include "audio.h"
 #include <plib.h>
@@ -248,6 +247,10 @@ void main(void){
   mktone(1,1,1,1);
   mktone(1,1,1,0);
 
+	for(i=0;i<=15;i++){
+		printstr(0,i*10,i,-1,"HELLO PIC"); //•¶Žš—ño—Í
+	}
+  
   for(i=0;i<2;i++){
           part = i?part1:part2;
       timing[i] = part[pos[i]].time*12;
