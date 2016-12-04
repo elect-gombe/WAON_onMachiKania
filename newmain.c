@@ -49,7 +49,8 @@ void main(void){
   T4CONbits.TCKPS = 3;
   T4CONbits.T32 = 0;
   T4CONbits.TCS = 0;
-  TMR4 = 0;
+  TMR4 = 0;/*とりあえず和音を再生しました。ソースを公開します。ハードは同じで多分大丈夫ですが心配ならローパスフィルターを入れてください。割り込みなどは一切使っていません。
+コードはリファクタリングしておきます。*/
   PR4 = CLOCK_FREQ / 8 / SAMPLING_FREQ;
   T4CONbits.ON = 1;
     
@@ -63,11 +64,12 @@ void main(void){
     
   init_composite(); // ビデオ出力システムの初期化
 
+  int j;
   while(1){
-      for(i=0;i<SOUND_CH;i++)
-    mktone(61 + i*6,1020,120+i*10,i);   
+      j=(j+1)%SOUND_CH;
+    mktone(61 + j*4,1020,200,j);   
   
-    for(i=0;i<=30;i++){
+    for(i=0;i<=10;i++){
       //60分のn秒ウェイト
       audiotask();      
       drawcount=0;

@@ -38,8 +38,8 @@ const wavetable_t sq_wavetable={
 
 const enve_t enve1={
     .a_vel = 10000,
-    .d_vel = 100,
-    .s_vel = 50,
+    .d_vel = 50,
+    .s_vel = 30,
     .r_vel = 8000,
     .a_time = 6,
     .ad_time = 25,
