@@ -12,7 +12,7 @@
 #pragma config FNOSC = PRIPLL, FSOSCEN = OFF, POSCMOD = XT, OSCIOFNC = OFF
 #pragma config FPBDIV = DIV_1, FWDTEN = OFF, JTAGEN = OFF, ICESEL = ICS_PGx1
 
-#define SAMPLING_FREQ 16000
+#define SAMPLING_FREQ 32000
 #define OUTPUT_FREQ 100000
 #define CLOCK_FREQ 53800000
 
@@ -241,8 +241,6 @@ void main(void){
     
   init_composite(); // ビデオ出力システムの初期化
 
-  int j=0;
-  unsigned int soundtime;
   unsigned int timing[2];
   unsigned int time;
   int pos[2]={0};
@@ -258,11 +256,11 @@ void main(void){
       time = gettime();
       for(i=0;i<2;i++){
           part = i?part2:part1;
-        if(time>-32000/60+timing[i]){
-            addNextSound(timing[i],part[pos[i]].key,part[pos[i]].len*1000*12/16000/* *3/4 */-10,part[pos[i]].vel+130,i);
+        if(time>-SAMPLING_FREQ/40+timing[i]){
+            addNextSound(timing[i],part[pos[i]].key,part[pos[i]].len*1000*25/SAMPLING_FREQ/* *3/4 */-10,part[pos[i]].vel+120,i);
             pos[i]++;
-            timing[i] = part[pos[i]].time*12;
-        }if(part[pos[i]].time==-1){pos[0]=0;pos[1]=0;settime(0);timing[0]=5000;timing[1]=5000;}
+            timing[i] = part[pos[i]].time*25;
+        }if(part[pos[i]].time==-1){pos[0]=0;pos[1]=0;settime(0);timing[0]=3000;timing[1]=3000;}
       }
       
       audiotask();      
@@ -278,8 +276,11 @@ void audiotask(void){
   static uint prevtrans=1;
   uint8_t *buff;
 
-  buff = NULL;
-
+#ifdef SIMMODE
+  buff = &sounddata[0];
+#else
+  buff = NULL;//&sounddata[0];
+#endif
   if(DmaChnGetEvFlags(0)&DMA_EV_SRC_HALF){
     DmaChnClrEvFlags(0,DMA_EV_SRC_HALF);
     if(prevtrans==2){

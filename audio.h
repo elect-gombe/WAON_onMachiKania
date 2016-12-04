@@ -31,7 +31,7 @@ typedef struct{
 
 typedef struct{
   const enve_t *enve;
-  const wavetable_t *wt;
+  const int8_t *wt;
   unsigned int enve_val;
   unsigned int prev_enve_exp_val;
   unsigned int enve_exp_val;
@@ -51,21 +51,21 @@ typedef struct{
 }music_dat_t;
 
 
-#define OVERSAMPLING 256
-#define OVERSAMPLING_N2 8
+#define OVERSAMPLING 512
+#define OVERSAMPLING_N2 9
 
 #define ENVE_MAX 60000
 #define ENVE_MAX_N2 16
 
-#define ENV_INTR_TIME 16
-#define ENVE_INTR_N2 4
+#define ENV_INTR_TIME 32
+#define ENVE_INTR_N2 5
 
 #define SOUND_CH 3
 
 #define SOUND_VEL_MAX 128
 #define SOUND_VEL_MAX_N2 7
 
-#define SIZEOFSOUNDBF 1024
+#define SIZEOFSOUNDBF 1600
 
 void mktone(unsigned int keyofTone,unsigned int len,unsigned int vel,size_t idx);
 
