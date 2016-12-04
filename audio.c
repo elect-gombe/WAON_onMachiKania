@@ -13,10 +13,10 @@
  *      (a)  (d)      (s)    (r)                       
  */
 
-#define SQ_TABLE_N2 5
+#define SQ_TABLE_N2 6
 
 const int8_t _sq_table[1<<SQ_TABLE_N2]={
-112,96,80,64,48,32,16,0,-16,-32,-48,-64,-80,-96,-112,-128,-112,-96,-80,-64,-48,-32,-16,0,16,32,48,64,80,96,112,127
+120,112,104,96,88,80,72,64,56,48,40,32,24,16,8,0,-8,-16,-24,-32,-40,-48,-56,-64,-72,-80,-88,-96,-104,-112,-120,-128,-120,-112,-104,-96,-88,-80,-72,-64,-56,-48,-40,-32,-24,-16,-8,0,8,16,24,32,40,48,56,64,72,80,88,96,104,112,120,127
 };
 
 #define FREQMUL_N2 8
@@ -40,7 +40,7 @@ const enve_t enve1={
     .a_vel = 6000,
     .d_vel = 30,
     .s_vel = 30,
-    .r_vel = 10000,
+    .r_vel = 6000,
     .a_time = 10,
     .ad_time = 250,
 };
@@ -49,19 +49,45 @@ const enve_t enve2={
     .a_vel = 6000,
     .d_vel = 0,
     .s_vel = 0,
-    .r_vel = 10000,
+    .r_vel = 6000,
     .a_time = 10,
     .ad_time = 250,
 };
 
 sound_t sound[SOUND_CH];
+int soundtiming[SOUND_CH];
 
-void calcsound(sound_t *s,unsigned char *buff);
+unsigned int soundtime;
+
+sound_t next_sound[SOUND_CH]={0};
+
+void addNextSound(unsigned int time,unsigned int keyofTone,unsigned int len,unsigned int vel,size_t idx){
+    next_sound[idx].active = 1;
+    next_sound[idx].len = len;
+//    next_sound[idx].theta = 0;
+    next_sound[idx].wt = &sq_wavetable;
+    next_sound[idx].tone_freq = key_to_freq_table[keyofTone]>>(8-next_sound[idx].wt->sizeofbuf_n2);
+    next_sound[idx].time = 0;
+    if(idx==0){
+        next_sound[idx].enve = &enve1;
+    }else{
+        next_sound[idx].enve = &enve2;
+    }
+    next_sound[idx].enve_val = 0;
+    next_sound[idx].prev_enve_exp_val = 0;
+    next_sound[idx].vel = vel;
+    
+    soundtiming[idx]=time;
+}
+unsigned int gettime(void){return soundtime;}
+unsigned int settime(int t){soundtime = t;}
+
+void calcsound(unsigned int idx,unsigned char *buff);
 
 void mktone(unsigned int keyofTone,unsigned int len,unsigned int vel,size_t idx){
     sound[idx].active = 1;
     sound[idx].len = len;
-    sound[idx].theta = 0;
+//    sound[idx].theta = 0;
     sound[idx].wt = &sq_wavetable;
     sound[idx].tone_freq = key_to_freq_table[keyofTone]>>(8-sound[idx].wt->sizeofbuf_n2);
     sound[idx].time = 0;
@@ -79,11 +105,13 @@ void soundTask(unsigned char *buff){
     size_t i;
     for(i=0;i<SOUND_CH;i++){
         if(sound[i].active == 1)
-        calcsound(&sound[i],buff);
+        calcsound(i,buff);
     }
+    soundtime+=SIZEOFSOUNDBF>>1;
 }
 
-void calcsound(sound_t *s,unsigned char *buff){
+void calcsound(unsigned int id,unsigned char *buff){
+    sound_t *s = &sound[id];
     unsigned int idx;
     unsigned int i;
     unsigned int enve;
@@ -93,6 +121,9 @@ void calcsound(sound_t *s,unsigned char *buff){
         time_div_n = (s->time&(0xFF>>(8-ENVE_INTR_N2-1)));
         if(time_div_n==0){
             calcEnve(s);
+        }
+        if(((soundtime+i)&0xFFFE) == (soundtiming[id]&0xFFFE)&&next_sound[id].active){
+            sound[id] = next_sound[id];
         }
         s->time++;
         s->theta += s->tone_freq;
@@ -120,19 +151,19 @@ int calcEnve(sound_t *s){
 
     s->prev_enve_exp_val = s->enve_exp_val;
 
-    if(time < e->a_time){
+    if(time > s->len){
+        s->enve_val -= e->r_vel;
+    }else if(time < e->a_time){
         s->enve_val += e->a_vel;
     }else if(time < e->ad_time){
         s->enve_val -= e->d_vel;
-    }else if(time > s->len){
-        s->enve_val -= e->r_vel;
     }else{
         s->enve_val -= e->s_vel;
     }
     
     if(s->enve_val > (0x1<<31)){
         s->enve_val = 0;
-        s->active = 0;
+//        s->active = 0;
     }
     
     s->enve_exp_val = enve_exp_table[((1<<ENVE_EXP_TABLE_N2)-1) - ((s->enve_val * s->vel) >> (SOUND_VEL_MAX_N2 + ENVE_MAX_N2-ENVE_EXP_TABLE_N2))];

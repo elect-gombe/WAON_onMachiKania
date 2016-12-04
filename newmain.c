@@ -204,7 +204,6 @@ const music_dat_t part2[]={
 
 void main(void){
   int i;
-  uint prevtrans;
 
   //ポートの初期設定
   TRISA = 0x0010; // RA4は入力
@@ -243,17 +242,27 @@ void main(void){
   init_composite(); // ビデオ出力システムの初期化
 
   int j=0;
-  int pos1 = 0;
-  int pos2 = 0;
+  unsigned int soundtime;
+  unsigned int timing[2];
+  unsigned int time;
+  int pos[2]={0};
+  const music_dat_t *part;
+  mktone(1,1,1,1);
+  mktone(1,1,1,0);
+
+  for(i=0;i<2;i++){
+          part = i?part1:part2;
+      timing[i] = part[pos[i]].time*12;
+  }
   while(1){
-      j+=30/3*2;
-      while(part1[pos1].time!=-1&&j>part1[pos1].time){
-          mktone(part1[pos1].key,part1[pos1].len*3/4-20,part1[pos1].vel+100,0);
-          pos1++;
-      }if(part1[pos1].time==-1){j=0;pos1=0;pos2=0;}
-      while(part2[pos2].time!=-1&&j>part2[pos2].time){
-          mktone(part2[pos2].key,part2[pos2].len*3/4-20,part2[pos2].vel+100,1);
-          pos2++;
+      time = gettime();
+      for(i=0;i<2;i++){
+          part = i?part2:part1;
+        if(time>-32000/60+timing[i]){
+            addNextSound(timing[i],part[pos[i]].key,part[pos[i]].len*1000*12/16000/* *3/4 */-10,part[pos[i]].vel+130,i);
+            pos[i]++;
+            timing[i] = part[pos[i]].time*12;
+        }if(part[pos[i]].time==-1){pos[0]=0;pos[1]=0;settime(0);timing[0]=5000;timing[1]=5000;}
       }
       
       audiotask();      
