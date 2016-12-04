@@ -246,13 +246,13 @@ void main(void){
   int pos1 = 0;
   int pos2 = 0;
   while(1){
-      j+=20;
+      j+=30/3*2;
       while(part1[pos1].time!=-1&&j>part1[pos1].time){
-          mktone(part1[pos1].key,part1[pos1].len*3/4-10,part1[pos1].vel*2,0);
+          mktone(part1[pos1].key,part1[pos1].len*3/4-20,part1[pos1].vel+100,0);
           pos1++;
       }if(part1[pos1].time==-1){j=0;pos1=0;pos2=0;}
       while(part2[pos2].time!=-1&&j>part2[pos2].time){
-          mktone(part2[pos2].key,part2[pos2].len*3/4-10,part2[pos2].vel*2,1);
+          mktone(part2[pos2].key,part2[pos2].len*3/4-20,part2[pos2].vel+100,1);
           pos2++;
       }
       

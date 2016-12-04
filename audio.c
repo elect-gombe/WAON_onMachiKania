@@ -16,8 +16,8 @@
 #define SQ_TABLE_N2 5
 
 const int8_t _sq_table[1<<SQ_TABLE_N2]={
-    -100,-100,-100,-100,-100,-100,-100,-100,-100,-100,-100,-100,-100,-100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,
-    };
+112,96,80,64,48,32,16,0,-16,-32,-48,-64,-80,-96,-112,-128,-112,-96,-80,-64,-48,-32,-16,0,16,32,48,64,80,96,112,127
+};
 
 #define FREQMUL_N2 8
 const unsigned int key_to_freq_table[]={
@@ -38,9 +38,18 @@ const wavetable_t sq_wavetable={
 
 const enve_t enve1={
     .a_vel = 6000,
-    .d_vel = 20,
-    .s_vel = 20,
-    .r_vel = 2000,
+    .d_vel = 30,
+    .s_vel = 30,
+    .r_vel = 10000,
+    .a_time = 10,
+    .ad_time = 250,
+};
+
+const enve_t enve2={
+    .a_vel = 6000,
+    .d_vel = 0,
+    .s_vel = 0,
+    .r_vel = 10000,
     .a_time = 10,
     .ad_time = 250,
 };
@@ -56,7 +65,11 @@ void mktone(unsigned int keyofTone,unsigned int len,unsigned int vel,size_t idx)
     sound[idx].wt = &sq_wavetable;
     sound[idx].tone_freq = key_to_freq_table[keyofTone]>>(8-sound[idx].wt->sizeofbuf_n2);
     sound[idx].time = 0;
-    sound[idx].enve = &enve1;
+    if(idx==0){
+        sound[idx].enve = &enve1;
+    }else{
+        sound[idx].enve = &enve2;
+    }
     sound[idx].enve_val = 0;
     sound[idx].prev_enve_exp_val = 0;
     sound[idx].vel = vel;
@@ -66,7 +79,7 @@ void soundTask(unsigned char *buff){
     size_t i;
     for(i=0;i<SOUND_CH;i++){
         if(sound[i].active == 1)
-      calcsound(&sound[i],buff);
+        calcsound(&sound[i],buff);
     }
 }
 
@@ -119,6 +132,7 @@ int calcEnve(sound_t *s){
     
     if(s->enve_val > (0x1<<31)){
         s->enve_val = 0;
+        s->active = 0;
     }
     
     s->enve_exp_val = enve_exp_table[((1<<ENVE_EXP_TABLE_N2)-1) - ((s->enve_val * s->vel) >> (SOUND_VEL_MAX_N2 + ENVE_MAX_N2-ENVE_EXP_TABLE_N2))];
