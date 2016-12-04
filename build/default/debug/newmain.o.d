@@ -1,6 +1,6 @@
 build/default/debug/newmain.o:  \
 newmain.c  \
+colortext32.h  \
+tetris.h  \
 audio.h  \
-composite32-high4.h  \
- lib_composite32-high.h  \
-humen.h 
+ humen.h 

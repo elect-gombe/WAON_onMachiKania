@@ -53,7 +53,7 @@ const enve_t enve2={
     .ad_time = 250,
 };
 
-sound_t sound[SOUND_CH];
+volatile sound_t sound[SOUND_CH];
 int soundtiming[SOUND_CH];
 
 unsigned int soundtime;
