@@ -16,7 +16,7 @@
 #define SQ_TABLE_N2 5
 
 const int8_t _sq_table[1<<SQ_TABLE_N2]={
-25,49,71,91,106,118,126,127,126,118,106,91,71,49,25,0,-25,-49,-71,-91,-106,-118,-126,-127,-126,-118,-106,-91,-71,-49,-25,0
+    -100,-100,-100,-100,-100,-100,-100,-100,-100,-100,-100,-100,-100,-100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,
     };
 
 #define FREQMUL_N2 8
@@ -37,12 +37,12 @@ const wavetable_t sq_wavetable={
 
 
 const enve_t enve1={
-    .a_vel = 10000,
-    .d_vel = 50,
-    .s_vel = 30,
-    .r_vel = 8000,
-    .a_time = 6,
-    .ad_time = 25,
+    .a_vel = 6000,
+    .d_vel = 20,
+    .s_vel = 20,
+    .r_vel = 2000,
+    .a_time = 10,
+    .ad_time = 250,
 };
 
 sound_t sound[SOUND_CH];
@@ -58,6 +58,7 @@ void mktone(unsigned int keyofTone,unsigned int len,unsigned int vel,size_t idx)
     sound[idx].time = 0;
     sound[idx].enve = &enve1;
     sound[idx].enve_val = 0;
+    sound[idx].prev_enve_exp_val = 0;
     sound[idx].vel = vel;
 }
 
@@ -76,7 +77,7 @@ void calcsound(sound_t *s,unsigned char *buff){
     unsigned int time_div_n;
     
     for(i=0;i<SIZEOFSOUNDBF >> 1;){
-        time_div_n = (s->time&(0xFF>>(8-ENV_INTR_N2-1)));
+        time_div_n = (s->time&(0xFF>>(8-ENVE_INTR_N2-1)));
         if(time_div_n==0){
             calcEnve(s);
         }
@@ -85,9 +86,9 @@ void calcsound(sound_t *s,unsigned char *buff){
         s->theta &= (0xFFFF >> (16-OVERSAMPLING_N2-s->wt->sizeofbuf_n2));
 
         idx = (s->theta >> (OVERSAMPLING_N2));
-        enve = (s->enve_val *(time_div_n) + (16- time_div_n)*s->prev_enve_val);
-        enve = enve_exp_table[(1<<ENVE_EXP_TABLE_N2)-((enve * s->vel) >> (ENV_INTR_N2 + SOUND_VEL_MAX_N2+ENVE_MAX_N2-ENVE_EXP_TABLE_N2))];
-        buff[i] += (enve * s->wt->table[idx]) >> ENVE_EXP_TABLE_MAX_N2;
+        enve = (s->enve_exp_val *(time_div_n) + (16- time_div_n)*s->prev_enve_exp_val);
+//        enve=16*256;
+        buff[i] += (enve * s->wt->table[idx]) >> ENVE_EXP_TABLE_MAX_N2+4;
         i++;
 
         s->time++;
@@ -95,16 +96,16 @@ void calcsound(sound_t *s,unsigned char *buff){
         s->theta &= (0xFFFF >> (16-OVERSAMPLING_N2-s->wt->sizeofbuf_n2));
 
         idx = (s->theta >> (OVERSAMPLING_N2));
-        buff[i] += (enve * s->wt->table[idx]) >> ENVE_EXP_TABLE_MAX_N2;
+        buff[i] += (enve * s->wt->table[idx]) >> (ENVE_EXP_TABLE_MAX_N2+4);
         i++;
     }
 }
 
 int calcEnve(sound_t *s){
     const enve_t *e = s->enve;
-    unsigned int time = s->time>>ENV_INTR_N2;
+    unsigned int time = s->time>>ENVE_INTR_N2;
 
-    s->prev_enve_val = s->enve_val;
+    s->prev_enve_exp_val = s->enve_exp_val;
 
     if(time < e->a_time){
         s->enve_val += e->a_vel;
@@ -120,6 +121,9 @@ int calcEnve(sound_t *s){
         s->enve_val = 0;
     }
     
-    return s->enve_val;
+    s->enve_exp_val = enve_exp_table[((1<<ENVE_EXP_TABLE_N2)-1) - ((s->enve_val * s->vel) >> (SOUND_VEL_MAX_N2 + ENVE_MAX_N2-ENVE_EXP_TABLE_N2))];
+
+    return s->enve_exp_val;
 }
+//        enve = enve_exp_table[((1<<ENVE_EXP_TABLE_N2)-1)-((enve * s->vel) >> (ENV_INTR_N2 + SOUND_VEL_MAX_N2+ENVE_MAX_N2-ENVE_EXP_TABLE_N2))];
 

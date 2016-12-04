@@ -33,7 +33,8 @@ typedef struct{
   const enve_t *enve;
   const wavetable_t *wt;
   unsigned int enve_val;
-  unsigned int prev_enve_val;
+  unsigned int prev_enve_exp_val;
+  unsigned int enve_exp_val;
   unsigned int time;
   unsigned int len;
   unsigned int tone_freq;
@@ -57,9 +58,9 @@ typedef struct{
 #define ENVE_MAX_N2 16
 
 #define ENV_INTR_TIME 16
-#define ENV_INTR_N2 4
+#define ENVE_INTR_N2 4
 
-#define SOUND_CH 10
+#define SOUND_CH 2
 
 #define SOUND_VEL_MAX 128
 #define SOUND_VEL_MAX_N2 7
