@@ -67,7 +67,7 @@ void main(void){
   int j;
   while(1){
       j=(j+1)%SOUND_CH;
-    mktone(61 + j*4,1020,200,j);   
+    mktone(60 + j*4,10200,180,j);   
   
     for(i=0;i<=10;i++){
       //60分のn秒ウェイト

@@ -59,7 +59,7 @@ typedef struct{
 #define ENV_INTR_TIME 16
 #define ENV_INTR_N2 4
 
-#define SOUND_CH 5
+#define SOUND_CH 10
 
 #define SOUND_VEL_MAX 128
 #define SOUND_VEL_MAX_N2 7
