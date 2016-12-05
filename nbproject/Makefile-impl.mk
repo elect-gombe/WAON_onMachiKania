@@ -31,7 +31,7 @@ DEFAULTCONF=default
 CONF=${DEFAULTCONF}
 
 # All Configurations
-ALLCONFS=default Sim 
+ALLCONFS=default Sim pickit3 
 
 
 # build
@@ -47,6 +47,7 @@ ALLCONFS=default Sim
 .clobber-impl: .clobber-pre .depcheck-impl
 	    ${MAKE} SUBPROJECTS=${SUBPROJECTS} CONF=default clean
 	    ${MAKE} SUBPROJECTS=${SUBPROJECTS} CONF=Sim clean
+	    ${MAKE} SUBPROJECTS=${SUBPROJECTS} CONF=pickit3 clean
 
 
 
@@ -54,6 +55,7 @@ ALLCONFS=default Sim
 .all-impl: .all-pre .depcheck-impl
 	    ${MAKE} SUBPROJECTS=${SUBPROJECTS} CONF=default build
 	    ${MAKE} SUBPROJECTS=${SUBPROJECTS} CONF=Sim build
+	    ${MAKE} SUBPROJECTS=${SUBPROJECTS} CONF=pickit3 build
 
 
 

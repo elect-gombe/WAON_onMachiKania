@@ -376,6 +376,7 @@ unsigned char startkeycheck(unsigned short n) {
 }
 
 void playmusic1step(void) {
+    return;
     //演奏中の曲を1つ進める
     if (music.stop) return; //演奏終了済み
     music.count--;
@@ -427,7 +428,7 @@ void startmusic(unsigned char *m) {
 void stopmusic(void) {
     music.stop = 1;
     music.pr = 0;
-    PR3 = 0;
+//    PR3 = 0;
 }
 
 void printchar(unsigned char x, unsigned char y, unsigned char c, unsigned char n) {
@@ -471,11 +472,6 @@ void printnumber6(unsigned char x, unsigned char y, unsigned char c, unsigned in
 }
 
 void writehighscore(void) {
-    //ハイスコアのフラッシュ書き込み
-    stop_composite(); //表示停止
-    NVMErasePage((void *) FLASHPAGE); //ページ消去
-    NVMWriteWord((void *) FLASHPAGE, highscore); //ワード書き込み
-    start_composite(); //表示開始
 }
 
 void printnext(void) {
@@ -505,7 +501,7 @@ void show(void) {
 void displayscore(void) {
     //得点表示
     printnumber6(0, 16, 7, score);
-    printnumber6(0, 19, 7, highscore);
+    printnumber6(0, 19, 7, 114514);
 }
 
 char check(_Block *bp, char x, char y) {

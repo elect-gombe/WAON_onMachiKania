@@ -60,12 +60,12 @@ typedef struct{
 #define ENV_INTR_TIME 32
 #define ENVE_INTR_N2 5
 
-#define SOUND_CH 3
+#define SOUND_CH 2
 
 #define SOUND_VEL_MAX 128
 #define SOUND_VEL_MAX_N2 7
 
-#define SIZEOFSOUNDBF 1600
+#define SIZEOFSOUNDBF 2000
 
 void mktone(unsigned int keyofTone,unsigned int len,unsigned int vel,size_t idx);
 
