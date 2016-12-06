@@ -37,7 +37,7 @@ const unsigned char enve_exp_table[]={
 
 const enve_t enve1={
     .a_vel = 6000,
-    .d_vel = 30,
+    .d_vel = 20,
     .s_vel = 15,
     .r_vel = 6000,
     .a_time = 10,
@@ -53,7 +53,8 @@ const enve_t enve2={
     .ad_time = 250,
 };
 
-volatile sound_t sound[SOUND_CH];
+volatile sound_t sound
+[SOUND_CH];
 int soundtiming[SOUND_CH];
 
 unsigned int soundtime;
@@ -66,16 +67,17 @@ void addNextSound(unsigned int time,unsigned int keyofTone,unsigned int len,unsi
 //    next_sound[idx].theta = 0;
     next_sound[idx].tone_freq = key_to_freq_table[keyofTone]>>(8-WAVE_TABLE_SIZE_N2);
     next_sound[idx].time = 0;
-    if(idx==0){
+    next_sound[idx].enve_val = 0;
+    next_sound[idx].prev_enve_exp_val = 0;
+    next_sound[idx].vel = vel;
+    if(idx!=2){
         next_sound[idx].enve = &enve1;
         next_sound[idx].wt = &_sq_wavetable;
     }else{
         next_sound[idx].wt = &_tri_wavetable;
         next_sound[idx].enve = &enve2;
+        next_sound[idx].vel+=20;
     }
-    next_sound[idx].enve_val = 0;
-    next_sound[idx].prev_enve_exp_val = 0;
-    next_sound[idx].vel = vel;
     
     soundtiming[idx]=time;
 }
@@ -90,6 +92,9 @@ void mktone(unsigned int keyofTone,unsigned int len,unsigned int vel,size_t idx)
 //    sound[idx].theta = 0;
     sound[idx].tone_freq = key_to_freq_table[keyofTone]>>(8-WAVE_TABLE_SIZE_N2);
     sound[idx].time = 0;
+    sound[idx].enve_val = 0;
+    sound[idx].prev_enve_exp_val = 0;
+    sound[idx].vel = vel;
     if(idx==0){
         sound[idx].wt = &_sq_wavetable;
         sound[idx].enve = &enve1;
@@ -97,9 +102,6 @@ void mktone(unsigned int keyofTone,unsigned int len,unsigned int vel,size_t idx)
         sound[idx].wt = &_tri_wavetable;
         sound[idx].enve = &enve2;
     }
-    sound[idx].enve_val = 0;
-    sound[idx].prev_enve_exp_val = 0;
-    sound[idx].vel = vel;
 }
 
 void soundTask(unsigned char *buff){
@@ -123,7 +125,7 @@ void calcsound(unsigned int id,unsigned char *buff){
         if(time_div_n==0){
             calcEnve(s);
         }
-        if(((soundtime+i)&0xFFFE) == (soundtiming[id]&0xFFFE)&&next_sound[id].active){
+        if((soundtime+i) == (soundtiming[id])&&next_sound[id].active){
             sound[id] = next_sound[id];
         }
         s->time++;
