@@ -36,12 +36,12 @@ const unsigned char enve_exp_table[]={
 
 
 const enve_t enve1={
-    .a_vel = 6500,
-    .d_vel = 20,
-    .s_vel = 5,
+    .a_vel = 2000,
+    .d_vel = 150,
+    .s_vel = 10,
     .r_vel = 6000,
-    .a_time = 10,
-    .ad_time = 300,
+    .a_time = 30,
+    .ad_time = 50,
 };
 
 const enve_t enve2={
@@ -72,11 +72,12 @@ void addNextSound(unsigned int time,unsigned int keyofTone,unsigned int len,unsi
     next_sound[idx].vel = vel;
     if(idx!=2){
         next_sound[idx].enve = &enve1;
-        next_sound[idx].wt = &_sq_wavetable;
-    }else{
         next_sound[idx].wt = &_tri_wavetable;
+        next_sound[idx].vel+=15;
+    }else{
+        next_sound[idx].wt = &_sq_wavetable;
         next_sound[idx].enve = &enve2;
-        next_sound[idx].vel+=20;
+        next_sound[idx].vel-=30;
     }
     
     soundtiming[idx]=time;
