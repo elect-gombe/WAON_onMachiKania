@@ -36,16 +36,16 @@ const unsigned char enve_exp_table[]={
 
 
 const enve_t enve1={
-    .a_vel = 6000,
+    .a_vel = 6500,
     .d_vel = 20,
-    .s_vel = 15,
+    .s_vel = 5,
     .r_vel = 6000,
     .a_time = 10,
-    .ad_time = 250,
+    .ad_time = 300,
 };
 
 const enve_t enve2={
-    .a_vel = 6000,
+    .a_vel = 6500,
     .d_vel = 0,
     .s_vel = 0,
     .r_vel = 6000,
@@ -121,7 +121,7 @@ void calcsound(unsigned int id,unsigned char *buff){
     unsigned int time_div_n;
     
     for(i=0;i<SIZEOFSOUNDBF >> 1;){
-        time_div_n = (s->time&(0xFF>>(8-ENVE_INTR_N2-1)));
+        time_div_n = (s->time&(0xFF>>(8-ENVE_INTR_N2)));
         if(time_div_n==0){
             calcEnve(s);
         }

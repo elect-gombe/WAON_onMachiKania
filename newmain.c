@@ -1015,7 +1015,7 @@ void musicTask(void) {
     for (i = 0; i < 3; i++) {
         part = i ? i==2?part3:part2 : part1;
         if (time>-SAMPLING_FREQ / 20 + timing[i]) {
-            addNextSound(timing[i]&0xFFFFFFFE, part[pos[i]].key, part[pos[i]].len * 1000 * 25 / SAMPLING_FREQ/* *3/4 */ - 10, part[pos[i]].vel + 120, i);
+            addNextSound(timing[i]&0xFFFFFFFE, part[pos[i]].key, part[pos[i]].len * 1000 * 25 / SAMPLING_FREQ/* *3/4 */ - 10, part[pos[i]].vel, i);
             pos[i]++;
             timing[i] = part[pos[i]].time * 25;
         }
