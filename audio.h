@@ -45,9 +45,9 @@ typedef struct{
 
 typedef struct{
   unsigned int time;
-  unsigned int len;
-  unsigned int key;
-  unsigned int vel;
+  uint16_t len;
+  uint8_t key;
+  uint8_t vel;
 }music_dat_t;
 
 

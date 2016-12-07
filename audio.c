@@ -112,9 +112,67 @@ void soundTask(unsigned char *buff){
         calcsound(i,buff);
     }
     soundtime+=SIZEOFSOUNDBF>>1;
+    if(soundtime > 23760*25-960){
+        unsigned int time = soundtime-23760*25-960;
+        if(time % (960*25)<960*2){
+            addnoise(buff);
+        }
+    }
+}
+
+void addnoise(uint8_t *buff){
+    static uint16_t reg = 0x8000;
+    uint16_t i=4*(SIZEOFSOUNDBF>>1);
+    int shortFreq = 0;
+    uint8_t out;
+    out=0;
+    do{
+        reg>>=1;
+        reg |= ((reg ^ (reg >> (shortFreq ? 6 : 1))) & 1) << 15;
+        out|=(reg&1)<<(i&0x3);
+        if((i&0x3)==1){
+            *buff   += (out)-8;
+            *buff++ += (out)-8;    out=0;
+        }
+    }while(--i);
 }
 
 void calcsound(unsigned int id,unsigned char *buff){
+    sound_t *s = &sound[id];
+    unsigned int idx;
+    unsigned int i;
+    unsigned int enve;
+    unsigned int time_div_n;
+    
+    for(i=0;i<SIZEOFSOUNDBF >> 1;){
+        time_div_n = (s->time&(0xFF>>(8-ENVE_INTR_N2)));
+        if(time_div_n==0){
+            calcEnve(s);
+        }
+        if((soundtime+i) == (soundtiming[id])&&next_sound[id].active){
+            sound[id] = next_sound[id];
+        }
+        s->time++;
+        s->theta += s->tone_freq;
+        s->theta &= (0xFFFF >> (16-OVERSAMPLING_N2-WAVE_TABLE_SIZE_N2));
+
+        idx = (s->theta >> (OVERSAMPLING_N2));
+        enve = (s->enve_exp_val *(time_div_n) + (ENV_INTR_TIME - time_div_n)*s->prev_enve_exp_val);
+//        enve=16*256;
+        buff[i] += (enve * s->wt[idx]) >> ENVE_EXP_TABLE_MAX_N2+ENVE_INTR_N2;
+        i++;
+
+        s->time++;
+        s->theta += s->tone_freq;
+        s->theta &= (0xFFFF >> (16-OVERSAMPLING_N2-WAVE_TABLE_SIZE_N2));
+
+        idx = (s->theta >> (OVERSAMPLING_N2));
+        buff[i] += (enve * s->wt[idx]) >> (ENVE_EXP_TABLE_MAX_N2+ENVE_INTR_N2);
+        i++;
+    }
+}
+
+void calcnoisesound(unsigned int id,unsigned char *buff){
     sound_t *s = &sound[id];
     unsigned int idx;
     unsigned int i;
