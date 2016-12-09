@@ -8,6 +8,7 @@
       <itemPath>humen.h</itemPath>
       <itemPath>colortext32.h</itemPath>
       <itemPath>tetris.h</itemPath>
+      <itemPath>SDFSIO.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -45,6 +46,7 @@
         <linkerTool>
           <linkerLibItems>
             <linkerLibFileItem>lib_composite32-high.a</linkerLibFileItem>
+            <linkerLibFileItem>libsdfsio.a</linkerLibFileItem>
           </linkerLibItems>
         </linkerTool>
         <archiverTool>
@@ -192,7 +194,6 @@
         <property key="UART1" value="true"/>
         <property key="UART2" value="true"/>
         <property key="USB" value="true"/>
-        <property key="firmware.download.all" value="false"/>
         <property key="hwtoolclock.frcindebug" value="false"/>
         <property key="memories.aux" value="false"/>
         <property key="memories.bootflash" value="true"/>
@@ -480,7 +481,7 @@
       <compileType>
         <linkerTool>
           <linkerLibItems>
-            <linkerLibFileItem>lib_composite32-high.a</linkerLibFileItem>
+            <linkerLibFileItem>libsdfsio.a</linkerLibFileItem>
           </linkerLibItems>
         </linkerTool>
         <archiverTool>
@@ -500,6 +501,8 @@
         <makeCustomizationEnableLongLines>false</makeCustomizationEnableLongLines>
         <makeCustomizationNormalizeHexFile>false</makeCustomizationNormalizeHexFile>
       </makeCustomizationType>
+      <item path="App_32MX250F128B.ld" ex="true" overriding="false">
+      </item>
       <C32>
         <property key="additional-warnings" value="false"/>
         <property key="enable-app-io" value="false"/>
@@ -918,6 +921,7 @@
         <linkerTool>
           <linkerLibItems>
             <linkerLibFileItem>lib_composite32-high.a</linkerLibFileItem>
+            <linkerLibFileItem>libsdfsio.a</linkerLibFileItem>
           </linkerLibItems>
         </linkerTool>
         <archiverTool>
@@ -1079,7 +1083,6 @@
         <property key="UART1" value="true"/>
         <property key="UART2" value="true"/>
         <property key="USB" value="true"/>
-        <property key="firmware.download.all" value="false"/>
         <property key="hwtoolclock.frcindebug" value="false"/>
         <property key="memories.aux" value="false"/>
         <property key="memories.bootflash" value="true"/>
