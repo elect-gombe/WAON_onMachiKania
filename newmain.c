@@ -7,9 +7,11 @@
 #include <stdlib.h>
 #include "colortext32.h"
 #include "tetris.h"
+#include "SDFSIO.h"
 
 #include "audio.h"
 #include <stdint.h>
+
 
 
 
@@ -940,6 +942,7 @@ void game(void) {
     gameover();
 }
 
+FSFILE *fhandle;
 void main(void) {
     int i;
 
@@ -979,6 +982,26 @@ void main(void) {
 
     init_composite(); // ビデオ出力システムの初期化
 
+    int curr=2;
+#define FILENAME "MARIO.WAV"
+    printstr(3,curr++,3,"SD INIT...");
+	if(FSInit()==FALSE){
+        printstr(3,curr++,3,"SD INIT ERR");
+		while(1) asm("wait");
+	} else {
+		fhandle = FSfopen(FILENAME,"r");
+        if(!fhandle){
+            printstr(3,curr++,3,"FILE <"FILENAME"> NOT FOUND");
+            while(1) asm("wait");            
+        }
+        printstr(3,curr++,3,"FILE <"FILENAME"> FOUND");
+    }
+    while(1){
+        int time=0;
+        musicTask();
+        printnumber6(3,6,3,time++);
+    }
+    
     unsigned int timing[2];
     unsigned int time;
     int pos[2] = {0};
@@ -997,6 +1020,8 @@ void main(void) {
 }
 
 void musicTask(void) {
+    
+    audiotask();return;
     unsigned int time;
     unsigned int i;
     static unsigned int timing[3];
@@ -1029,7 +1054,6 @@ void musicTask(void) {
         }
     }
 
-    audiotask();
 }
 
 void audiotask(void) {
@@ -1039,7 +1063,7 @@ void audiotask(void) {
 #ifdef SIMMODE
     buff = &sounddata[0];
 #else
-    buff = NULL; //&sounddata[0];
+    buff = NULL;//&sounddata[0];
 #endif
     if (DmaChnGetEvFlags(0) & DMA_EV_SRC_HALF) {
         DmaChnClrEvFlags(0, DMA_EV_SRC_HALF);
@@ -1060,6 +1084,7 @@ void audiotask(void) {
         for (i = 0; i < SIZEOFSOUNDBF / 2; i++) {
             buff[i] = 128;
         }
-        soundTask(buff);
+        //soundTask(buff);
+        FSfread(buff,1,SIZEOFSOUNDBF / 2,fhandle);
     }
 }
