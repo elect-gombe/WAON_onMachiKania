@@ -6,8 +6,8 @@
 #include <plib.h>
 #include <stdlib.h>
 #include "composite32-high4.h"
-#include "SDFSIO.h"
 
+#include "ff.h"
 #include <stdint.h>
 
 // 入力ボタンのポート、ビット定義
@@ -26,7 +26,7 @@
 #define CLOCK_FREQ (3.58*1000000*15)
 
 
-#define SIZEOFSOUNDBF 4096
+#define SIZEOFSOUNDBF 8192
 
 
 //外付けクリスタル with PLL (15倍)
@@ -44,18 +44,22 @@ unsigned char sounddata[SIZEOFSOUNDBF] = {0};
 unsigned char *cursor; //カーソル位置
 unsigned char cursorc; //カーソル色
 
-FSFILE *fhandle;
+FIL fhandle;
+FATFS fatfs;
+
 void main(void) {
+
     int i;
-    uint8_t buff[32*96*2];
-    FSFILE *video;
+    static volatile FRESULT res;
+    uint8_t buff[32 * 96 * 2];
+    FIL video;
 
     OSCConfig(OSC_POSC_PLL, OSC_PLL_MULT_15, OSC_PLL_POST_1, 0);
- 
+
     // 周辺機能ピン割り当て
-	SDI2R=2; //RPA4:SDI2
-	RPB5R=4; //RPB5:SDO2
-    
+    SDI2R = 2; //RPA4:SDI2
+    RPB5R = 4; //RPB5:SDO2
+
     //ポートの初期設定
     TRISA = 0x0010; // RA4は入力
     CNPUA = 0x0010; // RA4をプルアップ
@@ -78,7 +82,7 @@ void main(void) {
     T4CONbits.T32 = 0;
     T4CONbits.TCS = 0;
     TMR4 = 0; /*とりあえず和音を再生しました。ソースを公開します。ハードは同じで多分大丈夫ですが心配ならローパスフィルターを入れてください。割り込みなどは一切使っていません。
-コードはリファクタリングしておきます。*/
+	      コードはリファクタリングしておきます。*/
     PR4 = CLOCK_FREQ / 8 / SAMPLING_FREQ;
     T4CONbits.ON = 1;
 
@@ -91,59 +95,70 @@ void main(void) {
     DmaChnEnable(0);
 
     init_composite(); // ビデオ出力システムの初期化
-    
-    for(i=0;i<4;i++){
-        set_palette( i, i*60, i*60 , i*60);
+
+    for (i = 0; i < 4; i++) {
+        set_palette(i, i * 60, i * 60, i * 60);
     }
 
-    int curr=2;
+    int curr = 2;
 #define FILENAME "MARIO.WAV"
-    printstr(3,curr++*10,13,-1,"SD INIT...");
-	if(FSInit()==FALSE){
-        printstr(3,curr++*10,13,-1,"SD INIT ERR");
-		while(1) asm("wait");
-	}
-    else {
-		fhandle = FSfopen(FILENAME,"r");
-        if(!fhandle){
-            printstr(3,curr++*10,13,-1,"FILE <"FILENAME"> NOT FOUND");
-            while(1) asm("wait");            
-        }
-#define VIDEOFILE "output"
-        printstr(3,curr++*10,13,-1,"FILE <"VIDEOFILE"> FOUND");
-		video = FSfopen(VIDEOFILE,"r");
-        if(!fhandle){
-            printstr(3,curr++*10,13,-1,"FILE <"VIDEOFILE"> NOT FOUND");
-            while(1) asm("wait");            
-        }
-        printstr(3,curr++*10,13,-1,"FILE <"VIDEOFILE"> FOUND");
+    printstr(3, curr++*10, 13, -1, "SD INIT...");
+    if (disk_initialize(0) != 0) {
+        printstr(3, curr++*10, 13, -1, "SD INIT ERR");
+        while (1) asm("wait");
     }
-    line(0,0,255,224,3);
-    int y,x,b;
+    if (res = f_mount(&fatfs, "", 0) != FR_OK) {
+        printstr(3, curr++*10, 13, -1, "SD INIT ERR");
+        while (1) asm("wait");
+    } else {
+        res = f_open(&fhandle, FILENAME, FA_READ);
+        if (res != FR_OK) {
+            printstr(3, curr++*10, 13, -1, "FILE <"FILENAME"> NOT FOUND");
+            while (1) asm("wait");
+        }
+//#define VIDEOFILE "output"   
+//        printstr(3, curr++*10, 13, -1, "FILE <"VIDEOFILE"> FOUND");
+//        video = f_open(VIDEOFILE, "r");
+//        if (!fhandle) {
+//            printstr(3, curr++*10, 13, -1, "FILE <"VIDEOFILE"> NOT FOUND");
+//            while (1) asm("wait");
+//        }
+//        printstr(3, curr++*10, 13, -1, "FILE <"VIDEOFILE"> FOUND");
+//    }
+    line(0, 0, 255, 224, 3);
+    int y, x, b;
     uint16_t *vp;
     uint8_t *pb;
-    SPI2BRG = 0;
-    FSfread(buff,1,7,video);
-    while(1){
-        int time=0;
-        vp=VRAM;
-        musicTask();
-        pb = buff;
-//        for(y=0;y<95;y++){
-//            for(x=0;x<32;x++){
-//                *vp=((*pb)&0x3)<<12;
-//                *vp|=((*pb>>2)&0x3)<<8;
-//                *vp|=((*pb>>4)&0x3)<<4;
-//                *vp|=(*pb>>6);
-//                vp++;
-//                pb++;
-//            }
-//            vp+=32;
-//        }
-//        FSfread(buff,1,32*96*2,video);
-//        while(drawcount<3);
-        drawcount=0;
+    //    SPI2BRG = 0;
+    //FSfread(buff,1,7,video);
+    while (1) {
+        int time = 0;
+//        vp = VRAM;
+//        musicTask();
+//        pb = buff;
+        //        for(y=0;y<95;y++){
+        //            for(x=0;x<32;x++){
+        //                *vp=((*pb)&0x3)<<12;
+        //                *vp|=((*pb>>2)&0x3)<<8;
+        //                *vp|=((*pb>>4)&0x3)<<4;
+        //                *vp|=(*pb>>6);
+        //                vp++;
+        //                pb++;
+        //            }
+        //            vp+=32;
+        //        }
+        //        FSfread(buff,1,32*96*2,video);
+        //        while(drawcount<3);
+//        drawcount = 0;
+        f_read(&fhandle, buff, SIZEOFSOUNDBF / 2, &time);
+
+        printnum(100,100,3,0,drawcount);
+        if(time==0){
+            while(1);
+        }
+        
     }
+};
 }
 
 void musicTask(void) {
@@ -153,11 +168,12 @@ void musicTask(void) {
 void audiotask(void) {
     static uint prevtrans = 1;
     uint8_t *buff;
+    UINT read;
 
-#ifdef SIMMODE
+#ifndef SIMMODE
     buff = &sounddata[0];
 #else
-    buff = &sounddata[0];
+    buff = NULL; //&sounddata[0];
 #endif
     if (DmaChnGetEvFlags(0) & DMA_EV_SRC_HALF) {
         DmaChnClrEvFlags(0, DMA_EV_SRC_HALF);
@@ -179,6 +195,6 @@ void audiotask(void) {
             buff[i] = 128;
         }
         //soundTask(buff);
-        FSfread(buff,1,SIZEOFSOUNDBF / 2,fhandle);
+        f_read(&fhandle, buff, SIZEOFSOUNDBF / 2, &read);
     }
 }
