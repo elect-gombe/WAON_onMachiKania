@@ -5,10 +5,9 @@
 
 #include <plib.h>
 #include <stdlib.h>
-#include "colortext32.h"
+#include "composite32-high4.h"
 #include "SDFSIO.h"
 
-#include "audio.h"
 #include <stdint.h>
 
 // 入力ボタンのポート、ビット定義
@@ -24,63 +23,39 @@
 
 #define SAMPLING_FREQ 32000
 #define OUTPUT_FREQ 100000
-#define CLOCK_FREQ 57300000
+#define CLOCK_FREQ (3.58*1000000*15)
 
+
+#define SIZEOFSOUNDBF 4096
+
+
+//外付けクリスタル with PLL (15倍)
+#pragma config PMDL1WAY = OFF, IOL1WAY = OFF
+#pragma config FPLLIDIV = DIV_1, FPLLMUL = MUL_15, FPLLODIV = DIV_1
+#pragma config FNOSC = PRIPLL, FSOSCEN = OFF, POSCMOD = XT, OSCIOFNC = OFF
+#pragma config FPBDIV = DIV_1, FWDTEN = OFF, JTAGEN = OFF, ICESEL = ICS_PGx1
 
 typedef unsigned int uint;
 
 void audiotask(void);
 
-//sounddata配列　低いド?3オクターブ分の周期カウンタ値、PR3に書き込むと音程設定される
 unsigned char sounddata[SIZEOFSOUNDBF] = {0};
 
 unsigned char *cursor; //カーソル位置
 unsigned char cursorc; //カーソル色
 
-void printchar(unsigned char x, unsigned char y, unsigned char c, unsigned char n) {
-    //座標(x,y)にカラー番号cでテキストコードnを1文字表示
-    cursor = TVRAM + y * WIDTH_X + x;
-    cursorc = c;
-    *(cursor + ATTROFFSET) = cursorc;
-    *cursor++ = n;
-}
-
-void printstr(unsigned char x, unsigned char y, unsigned char c, unsigned char *s) {
-    //座標(x,y)からカラー番号cで文字列sを表示
-    cursor = TVRAM + y * WIDTH_X + x;
-    cursorc = c;
-    while (*s) {
-        *(cursor + ATTROFFSET) = cursorc;
-        *cursor++ = *s++;
-    }
-}
-
-void printchar2(unsigned char n) {
-    //カーソル位置、設定カラーでテキストコードnを1文字表示
-    *(cursor + ATTROFFSET) = cursorc;
-    *cursor++ = n;
-}
-
-void locate(unsigned char x, unsigned char y, unsigned char c) {
-    //カーソル位置とカラー設定
-    cursor = TVRAM + y * WIDTH_X + x;
-    cursorc = c;
-}
-
-void printnumber6(unsigned char x, unsigned char y, unsigned char c, unsigned int s) {
-    //座標(x,y)にカラー番号cで得点sを表示（6桁）
-    x += 6;
-    do {
-        printchar(x, y, c, '0' + s % 10);
-        s /= 10;
-        x--;
-    } while (s != 0);
-}
-
 FSFILE *fhandle;
 void main(void) {
     int i;
+    uint8_t buff[32*96*2];
+    FSFILE *video;
 
+    OSCConfig(OSC_POSC_PLL, OSC_PLL_MULT_15, OSC_PLL_POST_1, 0);
+ 
+    // 周辺機能ピン割り当て
+	SDI2R=2; //RPA4:SDI2
+	RPB5R=4; //RPB5:SDO2
+    
     //ポートの初期設定
     TRISA = 0x0010; // RA4は入力
     CNPUA = 0x0010; // RA4をプルアップ
@@ -116,25 +91,58 @@ void main(void) {
     DmaChnEnable(0);
 
     init_composite(); // ビデオ出力システムの初期化
+    
+    for(i=0;i<4;i++){
+        set_palette( i, i*60, i*60 , i*60);
+    }
 
     int curr=2;
 #define FILENAME "MARIO.WAV"
-    printstr(3,curr++,3,"SD INIT...");
+    printstr(3,curr++*10,13,-1,"SD INIT...");
 	if(FSInit()==FALSE){
-        printstr(3,curr++,3,"SD INIT ERR");
+        printstr(3,curr++*10,13,-1,"SD INIT ERR");
 		while(1) asm("wait");
-	} else {
+	}
+    else {
 		fhandle = FSfopen(FILENAME,"r");
         if(!fhandle){
-            printstr(3,curr++,3,"FILE <"FILENAME"> NOT FOUND");
+            printstr(3,curr++*10,13,-1,"FILE <"FILENAME"> NOT FOUND");
             while(1) asm("wait");            
         }
-        printstr(3,curr++,3,"FILE <"FILENAME"> FOUND");
+#define VIDEOFILE "output"
+        printstr(3,curr++*10,13,-1,"FILE <"VIDEOFILE"> FOUND");
+		video = FSfopen(VIDEOFILE,"r");
+        if(!fhandle){
+            printstr(3,curr++*10,13,-1,"FILE <"VIDEOFILE"> NOT FOUND");
+            while(1) asm("wait");            
+        }
+        printstr(3,curr++*10,13,-1,"FILE <"VIDEOFILE"> FOUND");
     }
+    line(0,0,255,224,3);
+    int y,x,b;
+    uint16_t *vp;
+    uint8_t *pb;
+    SPI2BRG = 0;
+    FSfread(buff,1,7,video);
     while(1){
         int time=0;
+        vp=VRAM;
         musicTask();
-        printnumber6(3,6,3,time++);
+        pb = buff;
+//        for(y=0;y<95;y++){
+//            for(x=0;x<32;x++){
+//                *vp=((*pb)&0x3)<<12;
+//                *vp|=((*pb>>2)&0x3)<<8;
+//                *vp|=((*pb>>4)&0x3)<<4;
+//                *vp|=(*pb>>6);
+//                vp++;
+//                pb++;
+//            }
+//            vp+=32;
+//        }
+//        FSfread(buff,1,32*96*2,video);
+//        while(drawcount<3);
+        drawcount=0;
     }
 }
 
@@ -149,7 +157,7 @@ void audiotask(void) {
 #ifdef SIMMODE
     buff = &sounddata[0];
 #else
-    buff = NULL;//&sounddata[0];
+    buff = &sounddata[0];
 #endif
     if (DmaChnGetEvFlags(0) & DMA_EV_SRC_HALF) {
         DmaChnClrEvFlags(0, DMA_EV_SRC_HALF);
